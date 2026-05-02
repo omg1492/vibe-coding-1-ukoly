@@ -7,13 +7,28 @@ rm -rf .venv && uv venv && uv sync
 uv run main.py
 ```
 
-Expected output
+The default user prompt is intentionally vague ("What is the weather like?") so the model first calls the `ask_user_question` tool, blocks on stdin for your selection, and only then calls `get_current_weather` with the chosen location.
+
+Expected output (interactive - you'll be asked to pick an option)
 ```
-First response: ChatCompletionMessage(content=None, refusal=None, role='assistant', annotations=[], audio=None, function_call=None, tool_calls=[ChatCompletionMessageToolCall(id='call_kmYfenGKJmVRMmbLdsmKY2Q6', function=Function(arguments='{"location":"Prague"}', name='get_current_weather'), type='function')])
-{'query': 'Prague', 'resolved_location': 'Prague, Hlavni mesto Praha, Czech Republic', 'temperature_c': 18.0, 'feels_like_c': 18.0, 'condition': 'Sunny', 'humidity_pct': 39, 'wind_kph': 10.0, 'observation_time_utc': '05:12 PM', 'source': 'wttr.in'}
-Second response: ChatCompletionMessage(content="The current weather in Prague, Czech Republic, is sunny with a temperature of 18°C. It feels like 18°C as well. The humidity is 39%, and there's a wind speed of 10 km/h.", refusal=None, role='assistant', annotations=[], audio=None, function_call=None, tool_calls=None)
+Step 1 response: ChatCompletionMessage(content=None, ..., tool_calls=[ChatCompletionMessageToolCall(id='call_...', function=Function(arguments='{"question":"Which location would you like the weather for?","options":["Prostějov","Brno","Möglingen"]}', name='ask_user_question'), type='function')])
+
+[ask_user_question] Which location would you like the weather for?
+  1. Prostějov
+  2. Brno
+  3. Möglingen
+  4. Other (type your own answer)
+Select an option number: 2
+  -> ask_user_question({'question': '...', 'options': [...]}) = {'answer': 'Brno', 'source': 'option'}
+
+Step 2 response: ChatCompletionMessage(content=None, ..., tool_calls=[ChatCompletionMessageToolCall(id='call_...', function=Function(arguments='{"location":"Brno"}', name='get_current_weather'), type='function')])
+  -> get_current_weather({'location': 'Brno'}) = {'query': 'Brno', 'resolved_location': 'Brno, Jihomoravsky, Czech Republic', 'temperature_c': 18.0, ...}
+
+Step 3 response: ChatCompletionMessage(content="The current weather in Brno, Czech Republic is ...", ..., tool_calls=None)
 --- Full response: ---
-ChatCompletionMessage(content="The current weather in Prague, Czech Republic, is sunny with a temperature of 18°C. It feels like 18°C as well. The humidity is 39%, and there's a wind speed of 10 km/h.", refusal=None, role='assistant', annotations=[], audio=None, function_call=None, tool_calls=None)
+ChatCompletionMessage(content="The current weather in Brno, Czech Republic is ...", ..., tool_calls=None)
 --- Response text: ---
-The current weather in Prague, Czech Republic, is sunny with a temperature of 18°C. It feels like 18°C as well. The humidity is 39%, and there's a wind speed of 10 km/h.
+The current weather in Brno, Czech Republic is ...
 ```
+
+Pick `4` at the prompt to type a custom location via the "Other" branch. To skip the question entirely, edit the user message in `main.py` to include a location (e.g. "What is the weather in Prague?").

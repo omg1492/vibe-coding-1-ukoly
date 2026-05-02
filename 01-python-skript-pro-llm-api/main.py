@@ -81,6 +81,37 @@ def _to_int(v):
     except Exception:
         return None
 
+def ask_user_question(question: str, options: list[str]) -> dict:
+    """
+    Stdin-based analogue of Claude Code's AskUserQuestion tool: shows the user
+    a numbered list of 2-4 options plus an auto-appended "Other" entry, and
+    returns the chosen answer to the LLM.
+    """
+    if not (2 <= len(options) <= 4):
+        return {"error": "invalid_options", "detail": "options must have 2-4 entries"}
+
+    print(f"\n[ask_user_question] {question}")
+    for i, opt in enumerate(options, 1):
+        print(f"  {i}. {opt}")
+    other_idx = len(options) + 1
+    print(f"  {other_idx}. Other (type your own answer)")
+
+    while True:
+        raw = input("Select an option number: ").strip()
+        if not raw.isdigit():
+            print("Please enter a number.")
+            continue
+        idx = int(raw)
+        if 1 <= idx <= len(options):
+            return {"answer": options[idx - 1], "source": "option"}
+        if idx == other_idx:
+            custom = input("Your answer: ").strip()
+            if custom:
+                return {"answer": custom, "source": "other"}
+            print("Empty answer; please try again.")
+            continue
+        print(f"Out of range; pick 1-{other_idx}.")
+
 # Define custom tools
 tools = [
     {
@@ -100,79 +131,108 @@ tools = [
             },
         }
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "ask_user_question",
+            "description": (
+                "Ask the user a clarifying question with 2-4 predefined options. "
+                "Use this when you need information from the user (e.g., a location) "
+                "before another tool can be called. The user may also choose 'Other' "
+                "and type a custom answer."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "question": {
+                        "type": "string",
+                        "description": "The question to display to the user.",
+                    },
+                    "options": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "minItems": 2,
+                        "maxItems": 4,
+                        "description": "2-4 short option labels to choose from.",
+                    },
+                },
+                "required": ["question", "options"],
+            },
+        }
+    },
 ]
 
 available_functions = {
     "get_current_weather": get_current_weather,
+    "ask_user_question": ask_user_question,
 }
 
 # Function to process messages and handle function calls
-def get_completion_from_messages(messages, model="gpt-4o"):
-    response = client.chat.completions.create(
-        model=model,
-        messages=messages,
-        tools=tools,  # Custom tools
-        tool_choice="auto"  # Allow AI to decide if a tool should be called
-    )
+def get_completion_from_messages(messages, model="gpt-4o", max_iterations=8):
+    """
+    Drive a tool-calling loop: keep calling the model until it returns an
+    assistant message with no tool_calls, dispatching every tool call in each
+    intermediate response. Caps at max_iterations to prevent runaway loops.
+    """
+    for step in range(1, max_iterations + 1):
+        response = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            tools=tools,
+            tool_choice="auto",
+        )
+        msg = response.choices[0].message
+        print(f"Step {step} response:", msg)
 
-    response_message = response.choices[0].message
-
-    print("First response:", response_message)
-
-    if response_message.tool_calls:
-        # Find the tool call content
-        tool_call = response_message.tool_calls[0]
-
-        # Extract tool name and arguments
-        function_name = tool_call.function.name
-        function_args = json.loads(tool_call.function.arguments) 
-        tool_id = tool_call.id
-        
-        # Call the function
-        function_to_call = available_functions[function_name]
-        function_response = function_to_call(**function_args)
-
-        print(function_response)
+        if not msg.tool_calls:
+            return msg
 
         messages.append({
             "role": "assistant",
             "tool_calls": [
                 {
-                    "id": tool_id,  
+                    "id": tc.id,
                     "type": "function",
                     "function": {
-                        "name": function_name,
-                        "arguments": json.dumps(function_args),
-                    }
+                        "name": tc.function.name,
+                        # Re-emit verbatim to avoid key-ordering / whitespace diffs.
+                        "arguments": tc.function.arguments,
+                    },
                 }
-            ]
-        })
-        messages.append({
-            "role": "tool",
-            "tool_call_id": tool_id,  
-            "name": function_name,
-            "content": json.dumps(function_response),
+                for tc in msg.tool_calls
+            ],
         })
 
-        # Second call to get final response based on function output
-        second_response = client.chat.completions.create(
-            model=model,
-            messages=messages,
-            tools=tools,  
-            tool_choice="auto"  
-        )
-        final_answer = second_response.choices[0].message
+        for tc in msg.tool_calls:
+            fn_name = tc.function.name
+            fn_args = json.loads(tc.function.arguments)
+            fn = available_functions[fn_name]
+            result = fn(**fn_args)
+            print(f"  -> {fn_name}({fn_args}) =", result)
+            messages.append({
+                "role": "tool",
+                "tool_call_id": tc.id,
+                "name": fn_name,
+                "content": json.dumps(result),
+            })
 
-        print("Second response:", final_answer)
-        return final_answer
-
-    return "No relevant function call found."
+    raise RuntimeError(
+        f"Exceeded {max_iterations} tool-calling iterations without a final answer."
+    )
 
 # Example usage
 messages = [
-    {"role": "system", "content": "You are a helpful AI assistant."},
-    # Try any location: "Prague", "Brno, CZ", "49.74,13.59"
-    {"role": "user", "content": "What is the current weather in Prague?"},
+    {
+        "role": "system",
+        "content": (
+            "You are a helpful AI assistant. If the user asks about weather but does "
+            "not specify a location, call the ask_user_question tool first with the "
+            "options ['Prostějov', 'Brno', 'Möglingen'] before calling get_current_weather. "
+            "Do not assume a location."
+        ),
+    },
+    # Try also: "What is the current weather in Prague?" to skip ask_user_question.
+    {"role": "user", "content": "What is the weather like?"},
 ]
 
 response = get_completion_from_messages(messages)
