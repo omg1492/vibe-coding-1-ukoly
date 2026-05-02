@@ -1,0 +1,15 @@
+.env
+credentials.json
+token.json
+
+.venv
+
+node_modules
+dist
+
+__pycache__
+
+logs
+agent_logs_react
+agent_logs
+
