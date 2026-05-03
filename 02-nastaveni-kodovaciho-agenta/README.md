@@ -8,6 +8,7 @@ Demo: project-scoped MCP server config + skill pro Claude Code.
 - `.claude/skills/caveman/SKILL.md` - project-scoped skill `caveman` (ultra-stručný režim, ~75 % méně tokenů)
 - `.claude/commands/caveman.md` - slash command `/caveman [lite|full|ultra|...]` pro přepnutí intenzity
 - `.claude/hooks/` - 3 Node.js hooky (aktivace, mode tracking, sdílená konfigurace)
+- `.claude/agents/page-summarizer.md` - subagent shrnující webovou stránku přes Playwright MCP
 - `.claude/settings.json` - registrace hooků (`SessionStart` + `UserPromptSubmit`)
 - Zdroj všech caveman souborů: [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman) (MIT, viz `.claude/skills/caveman/LICENSE`)
 
@@ -55,6 +56,8 @@ Caveman je rozdělen na 3 vrstvy, které spolupracují:
 | **Slash command** | `.claude/commands/caveman.md` | `/caveman lite\|full\|ultra` - přepnutí intenzity uvnitř session. |
 | **Hooky** | `.claude/hooks/caveman-{activate,mode-tracker,config}.js` | `SessionStart` injektuje pravidla na začátku session, `UserPromptSubmit` detekuje `/caveman` příkazy a píše stav do `~/.claude/.caveman-active`. |
 
+Demo úkol vyžaduje navíc i **Subagenta** - ten je oddělená čtvrtá vrstva, popsaná níž.
+
 Vrstvy se registrují v `.claude/settings.json` (project-scoped, commitne se do gitu):
 
 ```json
@@ -76,6 +79,20 @@ Aktivace v Claude Code:
 Vypnutí: `/caveman off`, "stop caveman" nebo "normal mode".
 
 Pozn.: project-scoped hooky vyžadují **explicitní schválení** při prvním spuštění Claude Code v tomto adresáři. Bez `node` v `PATH` hooky tiše selžou (best-effort design).
+
+## Subagent `page-summarizer`
+
+Minimální příklad subagenta, který demonstruje koncept a zároveň využívá už nakonfigurovaný **Playwright MCP** server (synergie MCP + Subagent v jednom příkladu).
+
+| Vlastnost | Hodnota |
+|---|---|
+| Soubor | `.claude/agents/page-summarizer.md` |
+| Co dělá | Otevře URL přes `browser_navigate` + `browser_snapshot`, vrátí 3 odrážky (titulek, hlavní téma, klíčové sekce). |
+| Vyvolání | Přirozeně: "summarize https://example.com" / "co je na ...". Explicitně: "use page-summarizer agent on ...". |
+| Proč subagent | Velký HTML/accessibility snapshot zůstane v **izolovaném kontextu** subagenta, do hlavní konverzace se vrátí jen 3 odrážky. |
+| Závislost | Playwright MCP (viz `.mcp.json` výš). |
+
+Ověř, že je subagent načtený, příkazem `/agents` v Claude Code - `page-summarizer` musí být v seznamu.
 
 ## Bezpečnost
 
