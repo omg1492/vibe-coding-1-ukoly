@@ -13,4 +13,4 @@ logs
 agent_logs_react
 agent_logs
 
-02-nastaveni-kodovaciho-agenta/.playwright-mcp/console-2026-05-03T08-19-09-657Z.log
+*.log
