@@ -1,0 +1,82 @@
+[
+  {
+    "id": "T-1001",
+    "user_id": "u-anna",
+    "category": "network",
+    "summary": "VPN connection drops after 5 minutes of idle time",
+    "resolution": "Upgraded VPN client from 4.10 to 4.12; idle timeout was a known bug.",
+    "resolved_at": "2025-12-04"
+  },
+  {
+    "id": "T-1002",
+    "user_id": "u-tomas",
+    "category": "account",
+    "summary": "Cannot receive 2FA code by SMS",
+    "resolution": "Regional SMS provider outage. Migrated user to authenticator-app 2FA.",
+    "resolved_at": "2026-01-12"
+  },
+  {
+    "id": "T-1003",
+    "user_id": "u-petra",
+    "category": "software",
+    "summary": "Outlook will not sync calendar after laptop reboot",
+    "resolution": "Cleared local OST cache and re-authenticated. Sync resumed.",
+    "resolved_at": "2026-01-21"
+  },
+  {
+    "id": "T-1004",
+    "user_id": "u-jakub",
+    "category": "account",
+    "summary": "Forgotten password, account locked",
+    "resolution": "Verified identity, triggered self-service reset.",
+    "resolved_at": "2026-02-03"
+  },
+  {
+    "id": "T-1005",
+    "user_id": "u-lucie",
+    "category": "network",
+    "summary": "Slow VPN throughput from home (under 1 Mbps)",
+    "resolution": "Confirmed ISP-side congestion via traceroute. User switched to a wired connection; no further action.",
+    "resolved_at": "2026-02-14"
+  },
+  {
+    "id": "T-1006",
+    "user_id": "u-default",
+    "category": "network",
+    "summary": "VPN: 'Connection timed out' immediately after 2FA prompt accepted",
+    "resolution": "Corporate DNS returned a stale gateway IP after a DC migration. User flushed DNS and switched resolver to 8.8.8.8 - VPN connected on the next attempt. KB-003 updated.",
+    "resolved_at": "2026-03-08"
+  },
+  {
+    "id": "T-1007",
+    "user_id": "u-marek",
+    "category": "hardware",
+    "summary": "Cannot print to office printer from home over VPN",
+    "resolution": "Re-mapped printer with the FQDN print01.example.com instead of the IP. Print queue accepted jobs.",
+    "resolved_at": "2026-03-15"
+  },
+  {
+    "id": "T-1008",
+    "user_id": "u-eva",
+    "category": "security",
+    "summary": "Suspicious email asking to re-confirm VPN credentials",
+    "resolution": "Confirmed phishing. Escalated to SOC; sender domain blocked at the mail gateway. User credentials rotated as a precaution.",
+    "resolved_at": "2026-03-22"
+  },
+  {
+    "id": "T-1009",
+    "user_id": "u-ondrej",
+    "category": "hardware",
+    "summary": "New laptop setup: missing corporate certificates",
+    "resolution": "Pushed cert bundle via Intune; validated Outlook and VPN enrolment.",
+    "resolved_at": "2026-04-04"
+  },
+  {
+    "id": "T-1010",
+    "user_id": "u-petra",
+    "category": "software",
+    "summary": "Excel crashes when opening shared workbook",
+    "resolution": "Reinstalled Office and removed COM add-in 'AcmeReporting' which was incompatible with the latest update.",
+    "resolved_at": "2026-04-19"
+  }
+]

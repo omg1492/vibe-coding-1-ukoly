@@ -1,0 +1,50 @@
+[
+  {
+    "id": "KB-001",
+    "title": "Resetting your corporate VPN password",
+    "tags": ["vpn", "password", "account"],
+    "body": "If your VPN credentials are no longer accepted, request a password reset through the self-service portal at portal.example.com/reset. The new password becomes active within 5 minutes. Use the same password for VPN and 2FA enrollment. If reset fails, contact the account team."
+  },
+  {
+    "id": "KB-002",
+    "title": "Troubleshooting 2FA and MFA issues",
+    "tags": ["2fa", "mfa", "authentication", "account"],
+    "body": "Most 2FA failures fall into three buckets: (1) clock drift on the authenticator device - resync the device clock, (2) enrolled phone number changed - re-enroll via portal.example.com/mfa, (3) backend gateway degraded - check status board. The hard-token PIN is separate from the VPN password."
+  },
+  {
+    "id": "KB-003",
+    "title": "Connection timed out after VPN 2FA prompt",
+    "tags": ["vpn", "timeout", "2fa", "network"],
+    "body": "Symptom: VPN client accepts the password and 2FA code but then shows 'Connection timed out'. Common causes: (a) Auth gateway degraded - check status, (b) split-tunnel DNS resolves the gateway to the wrong IP - flush DNS or set 8.8.8.8, (c) corporate firewall blocking UDP/4500 from the user's ISP. Try the fallback gateway vpn-fallback.example.com."
+  },
+  {
+    "id": "KB-004",
+    "title": "Setting up Outlook on a new device",
+    "tags": ["email", "outlook", "software"],
+    "body": "Outlook autodiscover requires the corporate root certificate. Install it from portal.example.com/certs first, then add the account using your standard email address. If autodiscover loops, configure manually with mail.example.com:993 (IMAP) and smtp.example.com:587 (SMTP). 2FA app passwords are required."
+  },
+  {
+    "id": "KB-005",
+    "title": "Requesting access to a shared drive",
+    "tags": ["access", "share", "permissions", "account"],
+    "body": "File-share access requests go through the access portal. Specify the share path (e.g. \\\\fs01\\projects\\acme), the access level (read or read-write), and the data owner's name. Standard SLA is one business day. Requests for finance or legal shares require additional sign-off and may take up to three days."
+  },
+  {
+    "id": "KB-006",
+    "title": "How to install company-approved software",
+    "tags": ["software", "installation", "endpoint"],
+    "body": "Open the Software Center on your endpoint (Start menu -> Software Center). Approved titles install without admin rights. For software not listed, file a request and the endpoint team will package and publish it within 5 business days. Do not install software from outside the catalog - the EDR agent will block and quarantine."
+  },
+  {
+    "id": "KB-007",
+    "title": "Wi-Fi connection issues at the office",
+    "tags": ["wifi", "network", "office"],
+    "body": "Use the SSID 'Corp-Wifi' and your domain credentials (use the format USER@example.com, not DOMAIN\\\\USER). The 'Guest-Wifi' SSID is sandboxed and cannot reach internal services or the VPN. If the laptop reports 'Cannot find network', forget the saved profile and reconnect with the certificate prompt accepted."
+  },
+  {
+    "id": "KB-008",
+    "title": "Account lockout after failed sign-in attempts",
+    "tags": ["account", "lockout", "password"],
+    "body": "Five failed sign-in attempts in 15 minutes lock the account for 30 minutes. The account team can release a lock immediately during business hours. Repeated lockouts often indicate a stale session on a phone or tablet still trying the old password - sign out everywhere from portal.example.com/sessions."
+  }
+]
