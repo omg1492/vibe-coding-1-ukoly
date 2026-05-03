@@ -28,7 +28,9 @@ Demo: project-scoped MCP server config + skill pro Claude Code.
 
 ## Aktivace
 
-1. Spusť Claude Code v tomto adresáři (`claude` v terminálu).
+> **Důležité:** Claude Code musí být spuštěn **přímo v tomto adresáři** (`02-nastaveni-kodovaciho-agenta/`), ne v kořeni repa. Project-scoped soubory (`.mcp.json`, `.claude/commands/`, `.claude/skills/`, `.claude/hooks/`, `.claude/settings.json`) se načítají jen z `cwd`, kde Claude Code startuje. Pokud spustíš `claude` o úroveň výš, slash command `/caveman` se nezobrazí, MCP server se nenačte a hooky se nezaregistrují.
+
+1. `cd 02-nastaveni-kodovaciho-agenta` a spusť `claude` v terminálu.
 2. Při prvním startu se objeví prompt na schválení MCP serverů z `.mcp.json` - potvrď.
 3. Ověř příkazem `/mcp` - `playwright` by měl být `connected`.
 4. Vyzkoušej: "otevři example.com a udělej screenshot".
