@@ -9,6 +9,8 @@ Demo: project-scoped MCP server config + skill pro Claude Code.
 - `.claude/commands/caveman.md` - slash command `/caveman [lite|full|ultra|...]` pro přepnutí intenzity
 - `.claude/hooks/` - 3 Node.js hooky (aktivace, mode tracking, sdílená konfigurace)
 - `.claude/agents/page-summarizer.md` - subagent shrnující webovou stránku přes Playwright MCP
+- `.claude/agents/repo-doctor.md` - subagent auditující konfiguraci přes `scripts/audit.sh`
+- `scripts/audit.sh` - shell helper pro repo-doctor (PASS/WARN/FAIL kontrola artefaktů)
 - `.claude/settings.json` - registrace hooků (`SessionStart` + `UserPromptSubmit`)
 - Zdroj všech caveman souborů: [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman) (MIT, viz `.claude/skills/caveman/LICENSE`)
 
@@ -93,6 +95,29 @@ Minimální příklad subagenta, který demonstruje koncept a zároveň využív
 | Závislost | Playwright MCP (viz `.mcp.json` výš). |
 
 Ověř, že je subagent načtený, příkazem `/agents` v Claude Code - `page-summarizer` musí být v seznamu.
+
+## Subagent `repo-doctor`
+
+Komplexnější subagent - místo MCP nástroje volá lokální shell skript a parsuje strukturovaný výstup. Demonstruje vzor "subagent + helper script" a self-referenčně audituje právě tu konfiguraci, kterou tento úkol učí.
+
+| Vlastnost | Hodnota |
+|---|---|
+| Soubor | `.claude/agents/repo-doctor.md` |
+| Helper | `scripts/audit.sh` (bash, žádné runtime závislosti kromě `node`/`python3` na JSON validaci) |
+| Co dělá | Spustí `audit.sh`, který vyprodukuje řádky `[PASS\|WARN\|FAIL] <kategorie> <zpráva>`. Subagent výstup seskupí podle kategorie a ke každému WARN/FAIL přidá konkrétní návrh opravy. |
+| Kontroly | platnost JSON v `.mcp.json` a `settings*.json`, `node --check` všech hooků, frontmatter v subagentech a skillech, existence cest referencovaných v `settings.json`, sekce v README. |
+| Vyvolání | "audituj repo", "use repo-doctor agent", "is my Claude Code setup complete?". |
+| Proč subagent | Skript produkuje desítky řádků výstupu - izolace v subagentovi udrží hlavní kontext čistý, vrací se jen finální checklist. |
+
+Ruční spuštění bez Claude Code:
+
+```bash
+bash scripts/audit.sh
+# nebo proti jinému adresáři:
+bash scripts/audit.sh /path/to/other/claude-project
+```
+
+Skript vždy končí kódem 0 a tiskne `[SUMMARY] pass=N warn=N fail=N` jako poslední řádek.
 
 ## Bezpečnost
 
