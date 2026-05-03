@@ -12,7 +12,7 @@ in-process MCP server defined in `mcp_server.py`.
 | `similar-finder` | `find_similar_tickets` | Surface analogous historical tickets and their resolutions. |
 | `status-checker` | `check_system_status` | Check internal services implicated by the ticket. |
 | `history-fetcher` | `lookup_user_history` | Pull recent ticket history for the reporting user. |
-| `aggregator` | (none) | Fan-in agent that synthesises a short intake dossier. |
+| `aggregator` | (none) | Fan-in agent that synthesises a short intake briefing. |
 
 ## Stage 2 - Triage (conditional + HITL)
 

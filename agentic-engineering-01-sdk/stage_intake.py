@@ -7,7 +7,7 @@ Four data-gatherer agents run concurrently against the helpdesk MCP tools:
 - history-fetcher    -> lookup_user_history
 
 Their outputs are aggregated by a fifth synthesis agent that writes a single
-"intake dossier" used by the rest of the pipeline.
+"intake briefing" used by the rest of the pipeline.
 
 This is the canonical fan-out/fan-in pattern from
 5_Claude_Agent_SDK/python/3_workflows/2_parallel_workflow.py - tools added.
@@ -67,7 +67,7 @@ async def _run_gatherer(
 
 
 async def run_intake(ticket_text: str, user_id: str) -> str:
-    """Fan-out 4 gatherer agents in parallel, then fan-in into a dossier."""
+    """Fan-out 4 gatherer agents in parallel, then fan-in into a briefing."""
     print("\n" + "=" * 72)
     print("STAGE 1: INTAKE  [PARALLEL workflow]")
     print("=" * 72)
@@ -143,7 +143,7 @@ async def run_intake(ticket_text: str, user_id: str) -> str:
             tg.start_soon(runner, spec)
 
     print("-" * 72)
-    print("Fan-in: synthesising dossier")
+    print("Fan-in: synthesising briefing")
 
     aggregated = "\n\n".join(f"### {name}\n{text}" for name, text in results)
 
@@ -151,30 +151,30 @@ async def run_intake(ticket_text: str, user_id: str) -> str:
         model=MODEL,
         system_prompt=(
             "You are an intake analyst. You will receive raw findings from four "
-            "parallel specialists. Write a SHORT dossier (under 200 words) that the "
+            "parallel specialists. Write a SHORT briefing (under 200 words) that the "
             "downstream triage and diagnosis stages can use. Lead with the most "
             "load-bearing facts (degraded services, near-identical past tickets). "
             "Do NOT propose a fix - that is for later stages."
         ),
     )
 
-    dossier_chunks: list[str] = []
+    briefing_chunks: list[str] = []
     async with ClaudeSDKClient(options=options) as client:
         await client.query(
             f"Original ticket:\n{ticket_text}\n\nUser id: {user_id}\n\n"
             f"Findings from parallel specialists:\n{aggregated}\n\n"
-            f"Write the intake dossier."
+            f"Write the intake briefing."
         )
         async for msg in client.receive_response():
             if isinstance(msg, AssistantMessage):
                 for block in msg.content:
                     if isinstance(block, TextBlock):
-                        dossier_chunks.append(block.text)
+                        briefing_chunks.append(block.text)
             elif isinstance(msg, ResultMessage):
                 if msg.total_cost_usd:
                     print(f"  [aggregator] done (cost ${msg.total_cost_usd:.4f})")
 
-    dossier = "\n".join(dossier_chunks).strip()
-    print("\n--- INTAKE DOSSIER ---")
-    print(dossier)
-    return dossier
+    briefing = "\n".join(briefing_chunks).strip()
+    print("\n--- INTAKE BRIEFING ---")
+    print(briefing)
+    return briefing

@@ -52,13 +52,13 @@ async def main(ticket_text: str, user_id: str) -> None:
     print(f"User    : {user_id}")
 
     # Stage 1 - PARALLEL fan-out / fan-in
-    dossier = await run_intake(ticket_text, user_id)
+    briefing = await run_intake(ticket_text, user_id)
 
     # Stage 2 - CONDITIONAL with HITL gate
-    triage = await run_triage(ticket_text, dossier)
+    triage = await run_triage(ticket_text, briefing)
 
     # Stage 3 - SUPERVISOR multi-agent
-    diagnosis = await run_diagnose(ticket_text, dossier, triage)
+    diagnosis = await run_diagnose(ticket_text, briefing, triage)
 
     # Stage 4 - SWARM peer review
     validated = await run_review(ticket_text, diagnosis)

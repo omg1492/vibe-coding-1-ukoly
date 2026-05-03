@@ -7,7 +7,7 @@ workflow, so all 7 patterns from the assignment are covered:
 
 | Stage | Pattern | File | What happens |
 |---|---|---|---|
-| 1. Intake | **Parallel** workflow | `stage_intake.py` | 4 specialist gatherers (KB, similar tickets, system status, user history) run concurrently; an aggregator agent fans them in into a dossier. |
+| 1. Intake | **Parallel** workflow | `stage_intake.py` | 4 specialist gatherers (KB, similar tickets, system status, user history) run concurrently; an aggregator agent fans them in into a briefing. |
 | 2. Triage | **Conditional** workflow + HITL | `stage_triage.py` | A classifier labels the ticket; the user confirms or overrides via `ask_user_question`; the workflow branches to one of 5 first-responder agents. |
 | 3. Diagnose | **Supervisor** multi-agent | `stage_diagnose.py` | An L2 lead supervisor delegates investigation to specialist subagents (network, account, software, hardware, security) using structured-output decisions. |
 | 4. Review | **Swarm** multi-agent | `stage_review.py` | Three peer reviewers (engineering, security, impact) hand off the diagnosis among themselves until one of them finishes the review. |
@@ -20,6 +20,131 @@ Human-in-the-loop runs through the same primitive used in the prior
 auto-appended "Other" entry. The orchestrator calls it directly between
 stages, and it is also exposed as an MCP tool so any agent can poll the
 user mid-conversation when it needs a clarification.
+
+## Architecture
+
+### Pipeline at a glance (sequential outer workflow)
+
+```mermaid
+flowchart LR
+    T([Ticket text<br/>+ user_id]) --> S1
+    S1[1. Intake<br/>PARALLEL] --> S2
+    S2[2. Triage<br/>CONDITIONAL<br/>+ HITL] --> S3
+    S3[3. Diagnose<br/>SUPERVISOR] --> S4
+    S4[4. Review<br/>SWARM] --> S5
+    S5[5. Resolve<br/>LOOP<br/>+ HITL] --> S6
+    S6[6. Document<br/>COLLABORATION<br/>+ HITL] --> O([KB article<br/>+ summary])
+```
+
+### Stage 1 - Intake (parallel: fan-out / fan-in)
+
+```mermaid
+flowchart LR
+    T([ticket + user_id]) --> KB[kb-searcher<br/>search_kb]
+    T --> SF[similar-finder<br/>find_similar_tickets]
+    T --> SC[status-checker<br/>check_system_status]
+    T --> HF[history-fetcher<br/>lookup_user_history]
+    KB --> AG[aggregator]
+    SF --> AG
+    SC --> AG
+    HF --> AG
+    AG --> D([intake briefing])
+```
+
+### Stage 2 - Triage (conditional + HITL)
+
+```mermaid
+flowchart TD
+    In([ticket + briefing]) --> C[classifier]
+    C --> H{{ask_user_question<br/>confirm category?}}
+    H --> FN[first-responder<br/>network]
+    H --> FA[first-responder<br/>account]
+    H --> FS[first-responder<br/>software]
+    H --> FH[first-responder<br/>hardware]
+    H --> FSec[first-responder<br/>security]
+    H --> FO[first-responder<br/>other]
+    FN --> Out([category +<br/>first read])
+    FA --> Out
+    FS --> Out
+    FH --> Out
+    FSec --> Out
+    FO --> Out
+```
+
+### Stage 3 - Diagnose (supervisor + specialist subagents)
+
+```mermaid
+flowchart TD
+    In([ticket + briefing + triage]) --> Sup
+    Sup{{L2 supervisor<br/>structured output:<br/>delegate vs finish}}
+    Sup -->|delegate task| N[network-specialist]
+    Sup -->|delegate task| A[account-specialist]
+    Sup -->|delegate task| Sw[software-specialist]
+    Sup -->|delegate task| Hw[hardware-specialist]
+    Sup -->|delegate task| Sec[security-specialist]
+    N -->|result| Sup
+    A -->|result| Sup
+    Sw -->|result| Sup
+    Hw -->|result| Sup
+    Sec -->|result| Sup
+    Sup -->|finish| Out([diagnosis])
+```
+
+Specialists share `search_kb`, `find_similar_tickets`, `check_system_status`,
+and `lookup_user_history` so they can investigate; the supervisor itself
+carries no tools and only routes via structured output.
+
+### Stage 4 - Review (swarm of peer reviewers)
+
+```mermaid
+flowchart LR
+    In([diagnosis]) --> Eng[engineering-reviewer]
+    Eng -->|handoff| Sec[security-reviewer]
+    Eng -->|handoff| Imp[impact-reviewer]
+    Sec -->|handoff| Imp
+    Sec -->|handoff| Eng
+    Imp -->|handoff| Eng
+    Eng -.->|finish| Out
+    Sec -.->|finish| Out
+    Imp -.->|finish| Out([validated<br/>diagnosis])
+```
+
+Each reviewer decides on every turn (via structured output) whether to hand
+off to one of its declared peers or to finish the chain. There is no
+hierarchy; entry point is `engineering-reviewer`.
+
+### Stage 5 - Resolve (loop with the user as the evaluator)
+
+```mermaid
+flowchart TD
+    In([diagnosis + review]) --> P[proposer<br/>search_kb]
+    P --> Plan([fix plan])
+    Plan --> H{{ask_user_question<br/>did this resolve it?}}
+    H -->|Yes - resolved| OK([status: resolved])
+    H -->|No / Partially| P
+    P -.->|after 3 iterations| X([status: exhausted])
+```
+
+The reference loop pattern uses an LLM evaluator; this demo substitutes the
+user, which is more honest for a helpdesk scenario.
+
+### Stage 6 - Document (collaboration + HITL publish gate)
+
+```mermaid
+flowchart LR
+    In([resolved ticket package]) --> W[kb-writer]
+    W --> R[technical-reviewer]
+    R --> E[editor<br/>resolved=true]
+    E --> Art([final article])
+    Art --> H{{ask_user_question<br/>publish?}}
+    H -->|Yes - publish| Save[save_kb_article]
+    H -->|No - discard| Disc([discarded])
+    Save --> Out([output/kb_articles/&lt;slug&gt;.md])
+```
+
+Each author runs in its own isolated `ClaudeSDKClient` session and emits
+structured output `{resolved, content}`. The editor sets `resolved=true` to
+end the chain.
 
 ## Prerequisites
 
@@ -70,7 +195,7 @@ STAGE 1: INTAKE  [PARALLEL workflow]
   [status-checker] starting...
   [history-fetcher] starting...
   ...
---- INTAKE DOSSIER ---
+--- INTAKE BRIEFING ---
 Auth gateway is currently degraded. KB-003 and ticket T-1006 describe an
 identical "VPN connection timed out after 2FA" pattern resolved by ...
 

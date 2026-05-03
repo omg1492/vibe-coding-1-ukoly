@@ -31,27 +31,27 @@ CATEGORIES = ["network", "account", "software", "hardware", "security", "other"]
 
 FIRST_RESPONDER_PROMPTS = {
     "network": (
-        "You are an L1 network technician. Given the ticket and intake dossier, "
+        "You are an L1 network technician. Given the ticket and intake briefing, "
         "give a one-paragraph first-line read: most likely network cause, what "
         "you'd verify first. No fixes yet."
     ),
     "account": (
         "You are an L1 account/identity technician. Given the ticket and intake "
-        "dossier, give a one-paragraph first-line read: most likely account or "
+        "briefing, give a one-paragraph first-line read: most likely account or "
         "auth cause, what you'd verify first. No fixes yet."
     ),
     "software": (
         "You are an L1 endpoint/software technician. Given the ticket and intake "
-        "dossier, give a one-paragraph first-line read: most likely "
+        "briefing, give a one-paragraph first-line read: most likely "
         "software/endpoint cause, what you'd verify first. No fixes yet."
     ),
     "hardware": (
-        "You are an L1 hardware technician. Given the ticket and intake dossier, "
+        "You are an L1 hardware technician. Given the ticket and intake briefing, "
         "give a one-paragraph first-line read: most likely hardware cause, "
         "what you'd verify first. No fixes yet."
     ),
     "security": (
-        "You are an L1 security analyst. Given the ticket and intake dossier, "
+        "You are an L1 security analyst. Given the ticket and intake briefing, "
         "flag any indicators that warrant SOC attention and give a one-paragraph "
         "first-line read. No fixes yet."
     ),
@@ -78,7 +78,7 @@ async def _run_agent(name: str, system_prompt: str, prompt: str) -> str:
     return "\n".join(chunks).strip()
 
 
-async def _classify(ticket_text: str, dossier: str) -> str:
+async def _classify(ticket_text: str, briefing: str) -> str:
     """Classifier returns one CATEGORIES value parsed from the response."""
     raw = await _run_agent(
         name="classifier",
@@ -88,7 +88,7 @@ async def _classify(ticket_text: str, dossier: str) -> str:
             "on a single line, then a brief one-sentence justification. Do not "
             "invent categories."
         ),
-        prompt=f"Ticket:\n{ticket_text}\n\nIntake dossier:\n{dossier}",
+        prompt=f"Ticket:\n{ticket_text}\n\nIntake briefing:\n{briefing}",
     )
     print("\n--- CLASSIFIER OUTPUT ---")
     print(raw)
@@ -104,13 +104,13 @@ def _confirmation_options(detected: str) -> list[str]:
     return [detected, *rest]
 
 
-async def run_triage(ticket_text: str, dossier: str) -> dict:
+async def run_triage(ticket_text: str, briefing: str) -> dict:
     """Classify -> HITL confirm -> conditional first-line response."""
     print("\n" + "=" * 72)
     print("STAGE 2: TRIAGE  [CONDITIONAL workflow + HITL]")
     print("=" * 72)
 
-    detected = await _classify(ticket_text, dossier)
+    detected = await _classify(ticket_text, briefing)
     print(f"\nDetected category: {detected}")
 
     answer = ask_user_question(
@@ -128,7 +128,7 @@ async def run_triage(ticket_text: str, dossier: str) -> dict:
     first_response = await _run_agent(
         name=f"first-responder-{chosen}",
         system_prompt=FIRST_RESPONDER_PROMPTS[chosen],
-        prompt=f"Ticket:\n{ticket_text}\n\nIntake dossier:\n{dossier}",
+        prompt=f"Ticket:\n{ticket_text}\n\nIntake briefing:\n{briefing}",
     )
 
     print("\n--- FIRST-RESPONDER READ ---")

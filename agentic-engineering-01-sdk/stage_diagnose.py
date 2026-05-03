@@ -131,7 +131,7 @@ async def _run_specialist(name: str, defn: AgentDefinition, task: str) -> str:
 
 
 async def run_diagnose(
-    ticket_text: str, dossier: str, triage: dict
+    ticket_text: str, briefing: str, triage: dict
 ) -> str:
     """Supervisor loop until the supervisor returns action='finish'."""
     print("\n" + "=" * 72)
@@ -143,7 +143,7 @@ async def run_diagnose(
 
     history = (
         f"Original ticket:\n{ticket_text}\n\n"
-        f"Intake dossier:\n{dossier}\n\n"
+        f"Intake briefing:\n{briefing}\n\n"
         f"Triage outcome: category='{triage['category']}', first response:\n"
         f"{triage['first_response']}"
     )
