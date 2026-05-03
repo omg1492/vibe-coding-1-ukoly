@@ -1,0 +1,11 @@
+[project]
+name = "agentic-engineering-01-sdk"
+version = "0.1.0"
+description = "IT service desk demo built on the Claude Agent SDK. Showcases 4 workflow patterns (sequential, parallel, conditional, loop) and 3 multi-agent patterns (collaboration, supervisor, swarm) in a single end-to-end ticket lifecycle, with human-in-the-loop confirmations at the right checkpoints."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "claude-agent-sdk>=0.1.53",
+    "anyio>=4.0.0",
+    "python-dotenv>=1.0.0",
+]

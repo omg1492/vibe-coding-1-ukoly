@@ -1,0 +1,44 @@
+[
+  {
+    "service": "VPN",
+    "status": "operational",
+    "uptime_24h": 99.7,
+    "last_incident": "2026-03-08: stale DNS records after DC migration"
+  },
+  {
+    "service": "Email",
+    "status": "operational",
+    "uptime_24h": 99.9,
+    "last_incident": "2026-02-01: 12-minute delivery delay"
+  },
+  {
+    "service": "Intranet",
+    "status": "operational",
+    "uptime_24h": 99.95,
+    "last_incident": "none in the last 30 days"
+  },
+  {
+    "service": "Auth",
+    "status": "degraded",
+    "uptime_24h": 97.2,
+    "last_incident": "ongoing: 2FA gateway returning intermittent timeouts during peak hours; vendor working on a fix"
+  },
+  {
+    "service": "Wiki",
+    "status": "operational",
+    "uptime_24h": 99.8,
+    "last_incident": "none in the last 30 days"
+  },
+  {
+    "service": "Print",
+    "status": "operational",
+    "uptime_24h": 99.5,
+    "last_incident": "2026-04-02: print spooler restart"
+  },
+  {
+    "service": "FileShare",
+    "status": "operational",
+    "uptime_24h": 99.9,
+    "last_incident": "none in the last 30 days"
+  }
+]
