@@ -5,7 +5,11 @@ Demo: project-scoped MCP server config + skill pro Claude Code.
 ## Co je v adresáři
 
 - `.mcp.json` - konfigurace Playwright MCP serveru, project-scoped (commitne se do gitu, sdílí se s týmem)
-- `.claude/skills/caveman/SKILL.md` - project-scoped skill `caveman` (ultra-stručný režim, ~75 % méně tokenů). Zdroj: [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman) (MIT)
+- `.claude/skills/caveman/SKILL.md` - project-scoped skill `caveman` (ultra-stručný režim, ~75 % méně tokenů)
+- `.claude/commands/caveman.md` - slash command `/caveman [lite|full|ultra|...]` pro přepnutí intenzity
+- `.claude/hooks/` - 3 Node.js hooky (aktivace, mode tracking, sdílená konfigurace)
+- `.claude/settings.json` - registrace hooků (`SessionStart` + `UserPromptSubmit`)
+- Zdroj všech caveman souborů: [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman) (MIT, viz `.claude/skills/caveman/LICENSE`)
 
 ## Konfigurace
 
@@ -39,18 +43,37 @@ Demo: project-scoped MCP server config + skill pro Claude Code.
 
 Project scope je nejvhodnější pro demo a týmovou spolupráci - každý, kdo si naklonuje repo, dostane stejné MCP nastavení (po schválení).
 
-## Skill `caveman`
+## Skill `caveman` + hooky
 
-Project-scoped skill v `.claude/skills/caveman/SKILL.md` - ultra-stručný režim, který shazuje výplňová slova (please, sure, certainly, articles a/an/the, hedging) a šetří ~75 % tokenů.
+Caveman je rozdělen na 3 vrstvy, které spolupracují:
+
+| Vrstva | Soubor | Co dělá |
+|---|---|---|
+| **Skill** | `.claude/skills/caveman/SKILL.md` | Pravidla režimu (rules, intensity levels, examples). Načte se přes skill discovery, když uživatel zmíní caveman. |
+| **Slash command** | `.claude/commands/caveman.md` | `/caveman lite\|full\|ultra` - přepnutí intenzity uvnitř session. |
+| **Hooky** | `.claude/hooks/caveman-{activate,mode-tracker,config}.js` | `SessionStart` injektuje pravidla na začátku session, `UserPromptSubmit` detekuje `/caveman` příkazy a píše stav do `~/.claude/.caveman-active`. |
+
+Vrstvy se registrují v `.claude/settings.json` (project-scoped, commitne se do gitu):
+
+```json
+{
+  "hooks": {
+    "SessionStart": [{ "hooks": [{ "type": "command",
+      "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/caveman-activate.js\"" }] }],
+    "UserPromptSubmit": [{ "hooks": [{ "type": "command",
+      "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/caveman-mode-tracker.js\"" }] }]
+  }
+}
+```
 
 Aktivace v Claude Code:
 
-- "use caveman", "caveman mode", "be brief"
-- nebo `/caveman lite|full|ultra` (přepnutí intenzity)
+- přirozeným jazykem: "use caveman", "caveman mode", "be brief"
+- nebo slash command: `/caveman lite|full|ultra`
 
-Vypnutí: "stop caveman" nebo "normal mode".
+Vypnutí: `/caveman off`, "stop caveman" nebo "normal mode".
 
-Skills uložené v `.claude/skills/<name>/SKILL.md` jsou project-scoped - commitnou se do gitu a načtou se automaticky každému, kdo si repo naklonuje.
+Pozn.: project-scoped hooky vyžadují **explicitní schválení** při prvním spuštění Claude Code v tomto adresáři. Bez `node` v `PATH` hooky tiše selžou (best-effort design).
 
 ## Bezpečnost
 
